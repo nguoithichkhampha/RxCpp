@@ -185,9 +185,11 @@ struct buffer_with_time
         void on_next(T v) const {
             auto localState = state;
             auto work = [v, localState](const rxsc::schedulable&){
-                for(auto& chunk : localState->chunks) {
-                    chunk.push_back(v);
-                }
+//                for(auto& chunk : localState->chunks) {
+//                    chunk.push_back(v);
+//                }
+                for(auto i=0; i< localState->chunks.size(); ++i)
+                    localState->chunks[i].push_back(v);
             };
             auto selectedWork = on_exception(
                 [&](){return localState->coordinator.act(work);},

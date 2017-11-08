@@ -150,8 +150,16 @@ struct buffer_with_time
             //
 
             auto produce_buffer = [localState](const rxsc::schedulable&) {
-                localState->dest.on_next(std::move(localState->chunks.front()));
-                localState->chunks.pop_front();
+                try
+                {
+                    localState->dest.on_next(std::move(localState->chunks.front()));
+                    localState->chunks.pop_front();
+                }
+                catch (...)
+                {
+                    std::exception_ptr p = std::current_exception();
+                    std::clog << "pop_front 1 "<< std::endl;
+                }
             };
             auto selectedProduce = on_exception(
                 [&](){return localState->coordinator.act(produce_buffer);},
@@ -185,11 +193,17 @@ struct buffer_with_time
         void on_next(T v) const {
             auto localState = state;
             auto work = [v, localState](const rxsc::schedulable&){
-//                for(auto& chunk : localState->chunks) {
-//                    chunk.push_back(v);
-//                }
-                for(auto i=0; i< localState->chunks.size(); ++i)
-                    localState->chunks[i].push_back(v);
+                try
+                {
+                    for(auto& chunk : localState->chunks) {
+                        chunk.push_back(v);
+                    }
+                }
+                catch (...)
+                {
+                    std::exception_ptr p = std::current_exception();
+                    std::clog << "push back "<< std::endl;
+                }
             };
             auto selectedWork = on_exception(
                 [&](){return localState->coordinator.act(work);},
@@ -218,8 +232,16 @@ struct buffer_with_time
                 on_exception(
                     [&](){
                         while (!localState->chunks.empty()) {
-                            localState->dest.on_next(std::move(localState->chunks.front()));
-                            localState->chunks.pop_front();
+                            try
+                            {
+                                localState->dest.on_next(std::move(localState->chunks.front()));
+                                localState->chunks.pop_front();
+                            }
+                            catch (...)
+                            {
+                                std::exception_ptr p = std::current_exception();
+                                std::clog << "pop_front 2 "<< std::endl;
+                            }
                         }
                         return true;
                     },
